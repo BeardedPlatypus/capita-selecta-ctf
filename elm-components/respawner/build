@@ -1,0 +1,1 @@
+elm make --output target/respawner.js src/respawner.elm
