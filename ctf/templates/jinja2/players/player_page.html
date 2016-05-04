@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    {# --------------------------------------------------------------- #}
+    {# Css definitions #}
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,700' rel='stylesheet' type='text/css'>
+
+    {# Custom Css #}
+    <link rel="stylesheet" href="{{ STATIC_URL }}drunken-parrot.css">
+
+    <style>
+        body {
+            padding-top: 70px;
+            /* Required padding for .navbar-fixed-top. Remove if using .navbar-static-top. Change if height of navigation changes. */
+        }
+    </style>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+<!-- Navigation -->
+<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">Start Bootstrap</a>
+        </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                <li>
+                    <a href="#">About</a>
+                </li>
+                <li>
+                    <a href="#">Services</a>
+                </li>
+                <li>
+                    <a href="#">Contact</a>
+                </li>
+            </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+
+
+<section id="player_interface">
+    {# --------------------------------------------------------- #}
+    {#  Header of the player page                                #}
+    {# --------------------------------------------------------- #}
+    <div class="container">
+        <div class="col-lg-12 text-center">
+            <h2>Capture The Flag</h2>
+        </div>
+    </div>
+
+    {# --------------------------------------------------------- #}
+    {#  Actual Application                                       #}
+    {# --------------------------------------------------------- #}
+    <div class="container">
+        <div class="row">
+            {# ------------------------------------------------- #}
+            {#  Stats-column %}
+            {# ------------------------------------------------- #}
+            <div class="col-xs-6 col-sm6 col-md-6 col-lg-6">
+                <div class="container-fluid">
+                    <h3>Red Team: {{ red_team.score }}</h3>
+                    <h3>Blue Team: {{ blue_team.score }}</h3>
+                </div>
+            </div>
+            {# ------------------------------------------------- #}
+            {#  Respawn-column                                   #}
+            {# ------------------------------------------------- #}
+            <div class="col-xs-6 col-sm-6 col col-md-6 col-lg-6">
+                <div class="container-fluid">
+                    <div class="row">
+                        <img class="img-responsive" src="https://lh3.googleusercontent.com/dC1gv_vi3QgRW3Ch-rexSB07mLpmsJjVO11GI_vAQ2P-qSSo4C0GPGZIxVpJNibBuR1Y3tGzLmvqmSfZ2j4XufRNyT26oYTQnkHdA01qntkLVOxFgEWWxjM1wZR1ggzvUnB7IBYdlFKdAy1T1SxY0Lkw_ncLbF25fG4WrEjdexoptPH8BUaByhLkrgqz6xs8LLclEnK72utN2hWkKiDIjmwNG-vWm0k8_hKGVm0lTBZQ7Yzuv7LQU2fZ7mWqHkDsaARb_Tj9SHhhSagJGVMuVmsJbEJr2GLDhI43Pm_06C8vFZNtmcDy5tXmuR7M310ns6QxFTwoHHABDzOxlOtB9tJTefX7aD_nHlywTtVwK4IcIDMuTxq1ID1ZpnWbUeQNadVtt7RBqCdz0Rbkp1XU6NyJTmR6ucNbPRapZ0kggjLu8jdMpr-D5TVjPR8xn60kuL8IIaghUUeDunO8JMQ91U9Pe7DbhwRuKfhKm_rZCOtmX_klicvEcB9Ekne-mhb2H01LnfZnd5q2gnkcuFvnxMHjd3waGivKSOB49iXhbcCOVmUtPkFv2O_0X4iUznuZCE4=s600-no" alt="Current Class">
+                    </div>
+                    <div class="row">
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 text-center">
+                                <h3>Classes</h3>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                                <a class="btn btn-block btn-danger btn-embossed">
+                                    Light
+                                </a>
+                            </div>
+                            <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                                <a class="btn btn-block btn-danger btn-embossed">
+                                    Medium
+                                </a>
+                            </div>
+                            <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                                <a class="btn btn-block btn-danger btn-embossed">
+                                    Heavy
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {# ----------------------------------------------------- #}
+        {#  Power-up tiles                                       #}
+        {# ----------------------------------------------------- #}
+        <div class="row">
+
+        </div>
+    </div>
+
+    {# --------------------------------------------------------- #}
+    {#  Footer                                                   #}
+    {# --------------------------------------------------------- #}
+
+</section>
+</body>
+</html>
