@@ -1,5 +1,6 @@
 module PlayerClass ( ID ( Light, Medium, Heavy )
                    , toStr, toImgUrl
+                   , deathToUrl, deathToStr
                    ) where
 
 -- PlayerClass Types
@@ -24,3 +25,9 @@ toImgUrl player_class =
     Light  -> "http://i.imgur.com/yY5f0hm.png"
     Medium -> "http://i.imgur.com/epotstg.png"
     Heavy  -> "http://i.imgur.com/rDVcgPk.png"
+
+deathToUrl : String
+deathToUrl = "http://www.mysoti.com/img/user/altoonativ/product/web/1209107/1209107_show_default.png"
+
+deathToStr : String
+deathToStr = "Death"
