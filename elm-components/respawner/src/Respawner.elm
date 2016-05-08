@@ -7,14 +7,13 @@ import Signal exposing (Signal, Address)
 import Effects exposing (Effects, Never)
 import Html exposing (Html)
 
-import ClassButtonPanel
-import CurrentClass
+import RespawnPanel
 
 -- StartApp boilerplate
 ------------------------------------------------------------
-app = StartApp.start { init = ClassButtonPanel.init
-                     , view = ClassButtonPanel.view
-                     , update = ClassButtonPanel.update
+app = StartApp.start { init = RespawnPanel.init
+                     , view = RespawnPanel.view
+                     , update = RespawnPanel.update
                      , inputs = []
                      }
 
