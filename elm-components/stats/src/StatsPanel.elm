@@ -89,9 +89,9 @@ viewTeamScores : Team.ID -> List ( Team.ID, Int ) -> Html
 viewTeamScores player_team scores =
   let
     outer_row = Html.div [ Html.Attributes.class "row" ]
-    inner_class_1 = Html.div [ Html.Attributes.class "col-md-1" ]
-    inner_class_3 = Html.div [ Html.Attributes.class "col-md-3" ]
-    inner_class_2 = Html.div [ Html.Attributes.class "col-md-2" ]
+    inner_class_1 = Html.div [ Html.Attributes.class "col-md-2" ]
+    inner_class_3 = Html.div [ Html.Attributes.class "col-md-6" ]
+    inner_class_2 = Html.div [ Html.Attributes.class "col-md-4" ]
 
     icon_player_team = Html.img [ Html.Attributes.src ( Team.iconUrl )] [ ]
     team_player_icon = \t -> inner_class_1 (if ( player_team == t ) 
@@ -100,7 +100,7 @@ viewTeamScores player_team scores =
     team_name = \t -> inner_class_3 [ Html.text ( Team.toStr t )]
     team_score = \s -> inner_class_2 [ Html.text ( toString s ) ]
   in
-    Html.div [ Html.Attributes.class "col-md-6" ]
+    Html.div [ Html.Attributes.class "col-md-12" ]
              ( List.map (\t -> outer_row [ team_player_icon ( fst t )
                                          , team_name ( fst t )
                                          , team_score ( snd t )
@@ -111,8 +111,8 @@ viewPlayerStats : Model -> Html
 viewPlayerStats model =
   let
     outer_row = Html.div [ Html.Attributes.class "row" ]
-    inner_class_4 = Html.div [ Html.Attributes.class "col-md-4" ]
-    inner_class_2 = Html.div [ Html.Attributes.class "col-md-2" ]
+    inner_class_4 = Html.div [ Html.Attributes.class "col-md-8" ]
+    inner_class_2 = Html.div [ Html.Attributes.class "col-md-4" ]
     int_value = \i -> inner_class_2 [ Html.text (toString i ) ]
 
     player_name =
@@ -128,7 +128,7 @@ viewPlayerStats model =
       outer_row [ inner_class_4 [ Html.text "Deaths:" ]
                 , int_value model.deaths ]
   in
-    Html.div [ Html.Attributes.class "col-md-6" ]
+    Html.div [ Html.Attributes.class "col-md-12" ]
              [ player_name
              , player_score
              , player_kills

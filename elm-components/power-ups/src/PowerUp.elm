@@ -1,4 +1,4 @@
-module Stats where
+module PowerUp where
 
 import StartApp
 import Task exposing ( Task )

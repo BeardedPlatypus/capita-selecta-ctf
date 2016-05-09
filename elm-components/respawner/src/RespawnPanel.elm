@@ -54,7 +54,7 @@ update action model =
 view : Address Action -> Model -> Html
 view address model =
   let
-    outer_container = Html.div [ Html.Attributes.class "container-fluid" ]
+    outer_container = Html.div [ Html.Attributes.class "col-xs-6 col-sm-6 col-md-6 col-lg-6" ]
     row = Html.div [ Html.Attributes.class "row" ]
     current_class = row [ viewCurrentClass address model.current_class ]
     button_panel = row [ viewButtonPanel address model.buttons ]
