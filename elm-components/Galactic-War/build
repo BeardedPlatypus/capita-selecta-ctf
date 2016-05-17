@@ -1,0 +1,1 @@
+elm make --output target/GalacticWar.js src/GalacticWar.elm
