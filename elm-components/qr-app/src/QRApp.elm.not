@@ -1,0 +1,32 @@
+port module QRApp exposing ( .. )
+
+-- Import Libraries
+--------------------------------------------------------------------------------
+import Html.App
+import Html exposing ( Html )
+import Html.Attributes
+
+
+-- Import Modules
+--------------------------------------------------------------------------------
+import QRResult
+
+
+-- Start App boilerplate
+--------------------------------------------------------------------------------
+main = Html.App.programWithFlags { init = initWithFlags
+                                 , update = QRResult.update
+                                 , subscriptions = (\_ -> Sub.none )
+                                 , view = QRResult.view
+                                 }
+
+
+type alias Flags = { width  : Int
+                   , height : Int
+                   , qr_interval : Float
+                   , reset_n : Int
+                   }
+
+
+initWithFlags : Flags -> ( QRResult.Model, Cmd QRResult.Msg )
+initWithFlags flags = QRResult.init flags.reset_n

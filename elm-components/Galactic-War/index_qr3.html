@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="HTML5 QR code Reader : A cross platform HTML5 QR code reader." />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheet.css">
+    <script type="text/javascript" src="https://a4d9c67c18cc43c13d0c0ac692c547942108af06.googledrive.com/host/0B9mscbSJKWVseU5aUXFkNUtoUWM/jquery-1.9.1.min.js"></script>
+    <script type="text/javascript" src="https://a4d9c67c18cc43c13d0c0ac692c547942108af06.googledrive.com/host/0B9mscbSJKWVseU5aUXFkNUtoUWM/html5-qrcode.min.js"></script>
+    <title>HTML5 QR code Reader</title>
+  </head>
+
+  <body>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner center">
+
+<h3 class="center">QR code Reader Demo</h3>
+
+<div  class="center" id="reader" style="width:300px;height:250px;"></div>
+
+<h6 class="center">Result</h6>
+<span id="read" class="center"></span>
+<br>
+
+<h6 class="center">Read Error (Debug only)</h6>
+<span class="center">Will constantly show a message, can be ignored</span>
+<span id="read_error" class="center"></span>
+
+<br>
+<h6 class="center">Video Error</h6>
+<span id="vid_error" class="center"></span>
+
+<br>
+<br>
+<br>
+
+</div>
+</section>
+
+<script type="text/javascript">
+$(document).ready(function(){
+	$('#reader').html5_qrcode(function(data){
+			$('#read').html(data);
+		},
+		function(error){
+			$('#read_error').html(error);
+		}, function(videoError){
+			$('#vid_error').html(videoError);
+		}
+	);
+});
+    </script>
+  </body>
+</html>

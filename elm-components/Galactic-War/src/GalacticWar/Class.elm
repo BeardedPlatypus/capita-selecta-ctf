@@ -1,5 +1,6 @@
 module GalacticWar.Class exposing ( ID ( R, P, S)
-                                  , toStr, toImgUrl, toDjango, fromDjango
+                                  , toStr, toCharacter
+                                  , toImgUrl, toDjango, fromDjango
                                   , deathToImgUrl, deathToStr )
 
 
@@ -17,6 +18,14 @@ toStr id =
     R -> "R-class"
     P -> "P-class"
     S -> "S-class"
+
+toCharacter : ID -> String
+toCharacter id =
+  case id of
+    R -> "R"
+    P -> "P"
+    S -> "S"
+
 
 -- FIXME: update these with the appropriate images
 toImgUrl : ID -> String

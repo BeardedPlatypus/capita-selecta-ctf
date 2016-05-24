@@ -99,11 +99,11 @@ view : Model -> Html Msg
 view model =
   let
     outer_container =
-      Html.div [ Html.Attributes.class "col-xs-6 col-sm-6 col-md-6 col-lg-6 ctf_companent_side" ]
+      Html.div [ Html.Attributes.class "col-xs-6 col-sm-6 col-md-6 col-lg-6 ctf_component_side" ]
   in
-    outer_container [ Html.div [ Html.Attributes.class "row ctf_stats-teams" ]
+    outer_container [ Html.div [ Html.Attributes.class "row ctf_stats_teams" ]
                                [ viewTeamScores model.team model.team_scores ]
-                    , Html.div [ Html.Attributes.class "row ctf_stats-values" ]
+                    , Html.div [ Html.Attributes.class "row ctf_stats_values" ]
                                [ viewPlayerStats model ]
                     ]
 
@@ -112,8 +112,8 @@ viewTeamScores : Team.ID -> List ( Team.ID, Int ) -> Html Msg
 viewTeamScores player_team team_scores =
   let
     cls t = case t of
-              Team.Red  -> "row ctf_team_red row"
-              Team.Blue -> "row ctf_team blue_row"
+              Team.Red  -> "row ctf_team_red_row"
+              Team.Blue -> "row ctf_team_blue_row"
     outer_row t = Html.div [ Html.Attributes.class ( cls t ) ]
     inner_class_2 = Html.div [ Html.Attributes.class "col-md-2" ]
     inner_class_6 = Html.div [ Html.Attributes.class "col-md-6" ]

@@ -3,6 +3,7 @@ module GalacticWar.NodeDisplay.NodeGrid exposing ( .. )
 -- Import Libraries
 --------------------------------------------------------------------------------
 import Html exposing ( Html )
+import Html.App
 import Platform.Cmd as Cmd exposing ( Cmd )
 import Platform.Sub as Sub exposing ( Sub )
 
@@ -16,6 +17,7 @@ import GalacticWar.Team as Team
 import GalacticWar.Class as Class
 import GalacticWar.NodeDisplay.Node as Node
 import GalacticWar.Util as Util
+import List
 
 
 -- Model
@@ -39,19 +41,18 @@ init n_cols n_rows nodes paths = ( { n_cols = n_cols
 -- Update
 --------------------------------------------------------------------------------
 type Msg = Interaction InteractionMsg
---         | UpdateModel UpdateModelMsg
+         | UpdateModel UpdateModelMsg
          | UpdateChild UpdateChildMsg
 
-type InteractionMsg = NodeClick Node.ID
-
--- type UpdateModelMsg = PlaceHolder
-
+type InteractionMsg = NodeClick Node.ID Node.Status
+type UpdateModelMsg = UpdateStatusNodes ( List ( Node.ID, Node.Status ))
 type UpdateChildMsg = UpdateNode Node.ID Node.Msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
   case msg of
     Interaction interaction_msg  -> updateInteraction interaction_msg  model
+    UpdateModel update_model_msg -> updateModel       update_model_msg model
     UpdateChild update_child_msg -> updateChild       update_child_msg model
 
 
@@ -62,10 +63,22 @@ toUpdateNodeCmd id msg = Util.toCmd ( UpdateChild ( UpdateNode id msg ))
 updateInteraction : InteractionMsg -> Model -> ( Model, Cmd Msg )
 updateInteraction msg model =
   case msg of
-    NodeClick id ->
+    NodeClick id status ->
       ( model
-      , toUpdateNodeCmd id ( Node.Interaction ( Node.NodeClick ))
+      , toUpdateNodeCmd id ( Node.Interaction ( Node.NodeClick status ))
       )
+
+updateModel : UpdateModelMsg -> Model -> ( Model, Cmd Msg )
+updateModel msg model =
+  let
+    mapToCmd ( id, status ) = toUpdateNodeCmd id ( Node.UpdateModel ( Node.UpdateStatus status ))
+  in
+    case msg of
+      UpdateStatusNodes list ->
+        ( model
+        , Cmd.batch ( List.map mapToCmd list )
+        )
+
 
 updateChild : UpdateChildMsg -> Model -> ( Model, Cmd Msg )
 updateChild msg model =
@@ -105,30 +118,46 @@ view model =
   let
     svg_paths = viewLineSvg model
     svg_nodes = List.concat ( List.map Node.viewSvg model.nodes )
+    svg_start_nodes = viewStartNodes model
+    svg_start_nodes_paths = viewStartNodePaths model
     dimensions = ( "0 0 " ++ ( viewBoxWidth model )) ++ ( viewBoxHeight model )
+
+    toMsg (id, msg ) =
+      case msg of
+        Node.Interaction interaction_msg ->
+          case interaction_msg of
+            Node.NodeClick status -> Interaction ( NodeClick id status )
+        _ -> UpdateChild ( UpdateNode id msg )
   in
-    Svg.svg [ Svg.Attributes.viewBox dimensions
-            , Svg.Attributes.width "100%" ]
-            ( svg_paths ++ svg_nodes )
+    Html.App.map toMsg ( Svg.svg [ Svg.Attributes.viewBox dimensions
+                                 , Svg.Attributes.width "83%"
+                                 ] ((( svg_start_nodes_paths
+                                         ++ svg_paths )
+                                       ++ svg_start_nodes )
+                                      ++ svg_nodes )
+                       )
 
 
 
+--------------------------------------------------------------------------------
 viewBoxWidth : Model -> String
 viewBoxWidth model = " " ++ toString (( model.n_cols - 1 ) * Node.x_step + 8 * Node.unit )
 
 viewBoxHeight : Model -> String
 viewBoxHeight model = " " ++ toString (( model.n_rows ) * Node.y_step + 2 * Node.unit )
 
+
+--------------------------------------------------------------------------------
 viewLineSvg : Model -> List ( Svg msg )
 viewLineSvg model =
   let
     filterMapFunc path_couple = pathMap model.nodes path_couple
     filtered_paths = List.filterMap filterMapFunc model.paths
 
-    toSvgPath ( node_1, node_2 ) = Svg.line [ Svg.Attributes.x1 ( Node.calcXSvgPos node_1 )
-                                            , Svg.Attributes.y1 ( Node.calcYSvgPos node_1 )
-                                            , Svg.Attributes.x2 ( Node.calcXSvgPos node_2 )
-                                            , Svg.Attributes.y2 ( Node.calcYSvgPos node_2 )
+    toSvgPath ( node_1, node_2 ) = Svg.line [ Svg.Attributes.x1 ( toString ( Node.calcXSvgPos node_1 ))
+                                            , Svg.Attributes.y1 ( toString ( Node.calcYSvgPos node_1 ))
+                                            , Svg.Attributes.x2 ( toString ( Node.calcXSvgPos node_2 ))
+                                            , Svg.Attributes.y2 ( toString ( Node.calcYSvgPos node_2 ))
                                             , Svg.Attributes.stroke "#d3d3d3"
                                             , Svg.Attributes.strokeWidth "3"
                                             ] [ ]
@@ -156,3 +185,58 @@ pathMap nodes ( id_1, id_2) =
         case maybe_node_2 of
           Nothing     -> Nothing
           Just node_2 -> Just ( node_1, node_2 )
+
+
+--------------------------------------------------------------------------------
+-- FIXME: make this more generic in the future currently assume only two teams exist
+
+-- assumption red  = right
+--            blue = left
+viewStartNodes : Model -> List ( Svg msg )
+viewStartNodes model =
+  let
+    end_x  = ( model.n_cols - 1 ) * Node.x_step + 7 * Node.unit
+    height = round ((( toFloat ( model.n_rows - 1 )) / 2 ) * Node.y_step + Node.unit + 50 )
+    blue_team_node = viewStartNode Team.Blue Node.unit height
+    red_team_node  = viewStartNode Team.Red  end_x     height
+  in
+    blue_team_node ++ red_team_node
+
+
+viewStartNodePaths : Model -> List ( Svg msg )
+viewStartNodePaths model =
+  let
+    end_x  = ( model.n_cols - 1 ) * Node.x_step + 7 * Node.unit
+    height = round ((( toFloat ( model.n_rows - 1 )) / 2 ) * Node.y_step + Node.unit + 50 )
+
+    filterByColumn column node = column == ( fst node.pos )
+    blue_connected = List.filter ( filterByColumn 0 ) model.nodes
+    red_connected = List.filter ( filterByColumn (model.n_cols - 1 )) model.nodes
+
+    toSvgPath ( nx, ny ) node = Svg.line [ Svg.Attributes.x1 ( toString nx )
+                                         , Svg.Attributes.y1 ( toString ny )
+                                         , Svg.Attributes.x2 ( toString ( Node.calcXSvgPos node ))
+                                         , Svg.Attributes.y2 ( toString ( Node.calcYSvgPos node ))
+                                         , Svg.Attributes.stroke "#d3d3d3"
+                                         , Svg.Attributes.strokeWidth "3"
+                                         ] [ ]
+    blue_paths = List.map ( toSvgPath ( Node.unit, height )) blue_connected
+    red_paths = List.map ( toSvgPath ( end_x, height )) red_connected
+  in
+    blue_paths ++ red_paths
+
+viewStartNode : Team.ID -> Int -> Int -> List ( Svg msg )
+viewStartNode id x y =
+  let
+    colour = Team.toHexColour id
+  in
+    [ Svg.circle [ Svg.Attributes.cx ( toString x )
+                 , Svg.Attributes.cy ( toString y )
+                 , Svg.Attributes.r "100"
+                 , Svg.Attributes.fill "#000000" ] [ ]
+    , Svg.circle [ Svg.Attributes.cx ( toString x )
+                 , Svg.Attributes.cy ( toString y )
+                 , Svg.Attributes.r "99"
+                 , Svg.Attributes.fill colour ] [ ]
+    ]
+

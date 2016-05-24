@@ -15,6 +15,7 @@ import PlayerClass
 import CurrentClass
 import ClassButtonPanel
 
+import RespawnConnection
 
 -- Model
 ------------------------------------------------------------
@@ -34,6 +35,8 @@ init = ( { current_class = ( fst CurrentClass.init )
 ------------------------------------------------------------
 type Action = NoAction
             | ActivateButton PlayerClass.ID
+            | CommunicationIsAliveAction RespawnConnection.IsAliveAction
+            | CommunicationRespawnAsAction RespawnConnection.RespawnAsAction 
 
 update : Action -> Model -> ( Model, Effects Action )
 update action model =
@@ -47,6 +50,14 @@ update action model =
         ( { model | current_class = fst new_current_class
                   , buttons = fst new_buttons }
         , Effects.none )
+    CommunicationIsAliveAction is_alive_action ->
+      case is_alive_action of
+        RespawnConnection.FetchIsAlive -> ( model
+                                          , Effects.map CommunicationIsAliveAction
+                                                        ( RespawnAction))
+
+        RespawnConnection.NewIsAlive   ->
+
 
 
 -- View

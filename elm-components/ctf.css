@@ -1,0 +1,52 @@
+.ctf_component_section {
+    border-bottom: 1px solid #d6e1e5;
+    padding-bottom: 24px;
+    padding-top: 24px;
+}
+
+.ctf_team_red_row {
+    color: 	#ffffff;
+    background-color: #f84545;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 0.2em;
+    font-size: 2.5em;
+}
+
+.ctf_team_blue_row {
+    color: 	#ffffff;
+    background-color: #02baf2;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 0.2em;
+    font-size: 2.5em;
+}
+
+.ctf_team_icon {
+    width: 50%;
+}
+
+.ctf_stats-values {
+    font-size: 1.5em;
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+}
+
+.ctf_stats-teams {
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+}
+
+.ctf_component_side {
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
+.ctf_class_symbol {
+    width: 50%;
+    height: auto;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin: 0 auto;
+}

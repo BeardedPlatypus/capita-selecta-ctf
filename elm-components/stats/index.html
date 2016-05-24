@@ -14,6 +14,16 @@
 <body>
 </body>
 <script type="text/javascript">
-  var app = Elm.fullscreen(Elm.Stats, {});
+ var app = Elm.fullscreen(Elm.Stats, { teamIn: "Red"
+                                     , teamScoreIn: [ "Red", 0 ]
+                                     , playerNameIn: "test_1"
+                                     , playerScoreIn: 0
+                                     , playerKillsIn: 0
+                                     , playerDeathsIn: 0
+                                     , statsUrlIn: ""
+                                     });
+ app.ports.teamIn.send("Blue");
+ app.ports.playerNameIn.send("Test_1");
+ app.ports.statsUrlIn.send("http://localhost:8000/players/1/stats_json/")
 </script>
 </html>

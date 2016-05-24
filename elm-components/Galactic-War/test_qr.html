@@ -1,0 +1,102 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta charset="UTF-8" >
+        <title>Galactic War - Player Interface</title>
+
+        <!-- Bootstrap and other styling -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="https://raw.githubusercontent.com/BeardedPlatypus/cpl-project/master/css/drunken-parrot.css">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+        <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,700' rel='stylesheet' type='text/css'>
+
+        <link rel="stylesheet" href="https://a4d9c67c18cc43c13d0c0ac692c547942108af06.googledrive.com/host/0B9mscbSJKWVseU5aUXFkNUtoUWM/ctf.css">
+
+
+        <!-- QR decode java scripts  -->
+        <script type="text/javascript" src="grid.js"></script>
+        <script type="text/javascript" src="version.js"></script>
+        <script type="text/javascript" src="detector.js"></script>
+        <script type="text/javascript" src="formatinf.js"></script>
+        <script type="text/javascript" src="errorlevel.js"></script>
+        <script type="text/javascript" src="bitmat.js"></script>
+        <script type="text/javascript" src="datablock.js"></script>
+        <script type="text/javascript" src="bmparser.js"></script>
+        <script type="text/javascript" src="datamask.js"></script>
+        <script type="text/javascript" src="rsdecoder.js"></script>
+        <script type="text/javascript" src="gf256poly.js"></script>
+        <script type="text/javascript" src="gf256.js"></script>
+        <script type="text/javascript" src="decoder.js"></script>
+        <script type="text/javascript" src="qrcode.js"></script>
+        <script type="text/javascript" src="findpat.js"></script>
+        <script type="text/javascript" src="alignpat.js"></script>
+        <script type="text/javascript" src="databr.js"></script>
+
+        <!-- Elm script -->
+        <script type="text/javascript" src="https://a4d9c67c18cc43c13d0c0ac692c547942108af06.googledrive.com/host/0B9mscbSJKWVseU5aUXFkNUtoUWM/MinimalCameraApp.js"></script>
+    </head>
+
+    <body>
+    </body>
+
+    <script type="text/javascript">
+        // -------------------------------------
+        // Set up QR canvas
+        // -------------------------------------
+        var backbuffer_canvas = document.createElement('canvas');
+        backbuffer_canvas.id = "qr-canvas";
+
+        var backbuffer_context = backbuffer_canvas.getContext('2d');
+
+        // -------------------------------------
+        // Elm application
+        // -------------------------------------
+        var app = Elm.MinimalCameraApp.fullscreen({width: 300, height:300});
+
+        // -------------------------------------
+        //  Video Interop
+        // -------------------------------------
+        app.ports.initVideoSource.subscribe(function(request) {
+            navigator.getUserMedia = navigator.getUserMedia ||
+                    navigator.webkitGetUserMedia ||
+                    navigator.mozGetUserMedia;
+
+            if (navigator.getUserMedia) {
+                navigator.getUserMedia(
+                        {
+                            audio: false,
+                            video: {facingMode: "environment"}
+                        },
+                        function (mediaStream) {
+                            src_url = window.URL.createObjectURL(mediaStream);
+                            app.ports.receiveVideoSource.send({
+                                msg: 'SUCCEED',
+                                url: src_url,
+                                err: null
+                            });
+                        },
+                        function (err) {
+                            app.ports.receiveError.send({
+                                error_msg: err.name
+                            });
+                        });
+            } else {
+                app.ports.receiveError.send({
+                    error_msg: 'not supported'
+                });
+            }});
+
+        app.ports.startVideoStream.subscribe(function(request) {
+            var video = document.querySelector('video');
+            video.onloadedmetadata = function(e) {
+                backbuffer_canvas.width = video.clientWidth;
+                backbuffer_canvas.height = video.clientHeight;
+
+                video.play();
+            };
+        });
+
+        app.ports
+    </script>
+</html>

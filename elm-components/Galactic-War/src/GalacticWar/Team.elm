@@ -22,6 +22,12 @@ toHexColour team =
     Red       -> "#f84545"
     Blue      -> "#02baf2"
 
+fromDjango : String -> Maybe ID
+fromDjango s =
+  case s of
+    "r" -> Just Red
+    "b" -> Just Blue
+    _   -> Nothing
 
 iconUrl : String
 iconUrl = "http://i.imgur.com/vqtnJqI.png"

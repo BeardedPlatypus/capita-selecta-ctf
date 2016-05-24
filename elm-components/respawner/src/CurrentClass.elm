@@ -62,7 +62,7 @@ view address model =
                               )
     img = Html.img [ src
                    , alt
-                   , Html.Attributes.width 100
+                   , Html.Attributes.class "ctf_class_symbol"
                    ]
                    [ ]
     elements = [ img ]

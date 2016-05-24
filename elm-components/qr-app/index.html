@@ -1,0 +1,64 @@
+
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta charset="UTF-8" >
+        <title>Respawn Test</title>
+
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="https://raw.githubusercontent.com/BeardedPlatypus/cpl-project/master/css/drunken-parrot.css">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+        <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,700' rel='stylesheet' type='text/css'>
+
+        <script type="text/javascript" src="https://a4d9c67c18cc43c13d0c0ac692c547942108af06.googledrive.com/host/0B9mscbSJKWVseU5aUXFkNUtoUWM/QRApp.js"></script>
+    </head>
+
+    <body>
+    </body>
+
+    <script type="text/javascript">
+        // ------------------------------------------------
+        // Elm Application
+        // ------------------------------------------------
+        var app = Elm.QRApp.fullscreen({width: 300, height:300});
+
+        // ------------------------------------------------
+        // Video Interop
+        // ------------------------------------------------
+        app.ports.initVideoSource.subscribe(function(request) {
+            navigator.getUserMedia = navigator.getUserMedia ||
+                    navigator.webkitGetUserMedia ||
+                    navigator.mozGetUserMedia;
+
+            if (navigator.getUserMedia) {
+                navigator.getUserMedia(
+                        {
+                            audio: false,
+                            video: {facingMode: "environment"}
+                        },
+                        function (mediaStream) {
+                            src_url = window.URL.createObjectURL(mediaStream);
+                            app.ports.receiveVideoSourceSuccess.send({
+                                url: src_url,
+                            });
+                        },
+                        function (err) {
+                            app.ports.receiveVideoSourceError.send({
+                                error_msg: err.name
+                            });
+                        });
+            } else {
+                app.ports.receiveVideoSourceError.send({
+                    error_msg: 'not supported'
+                });
+            }});
+
+        app.ports.playVideoStream.subscribe(function(request) {
+            var video = document.querySelector('video');
+            video.onloadedmetadata = function(e) {
+                video.play();
+            };
+        });
+    </script>
+</html>

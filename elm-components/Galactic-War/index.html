@@ -16,6 +16,13 @@
     <body>
     </body>
     <script type="text/javascript">
-     var app = Elm.GalacticWar.fullscreen();
+     var app = Elm.GalacticWar.fullscreen({class:'s', n_cols:7, n_rows:7, server_url:'',
+                                           nodes:[{ id:1, x:0, y:1 },
+                                                  { id:2, x:0, y:3 },
+                                                  { id:3, x:0, y:5 },
+                                                  { id:4, x:1, y:1 },
+                                                  { id:5, x:1, y:3 },
+                                                  { id:6, x:1, y:5 }],
+                                           paths:[ { node_1:1, node_2:4 }]});
     </script>
 </html>
