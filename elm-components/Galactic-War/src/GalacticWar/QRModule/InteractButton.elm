@@ -15,6 +15,7 @@ import GalacticWar.PlayerInteraction as PlayerInteraction
 -- Model
 --------------------------------------------------------------------------------
 type alias Model = { action : PlayerInteraction.Action
+                   , is_active : Bool
                    , is_disabled : Bool
                    , click_n : Int
                    }
@@ -22,6 +23,7 @@ type alias Model = { action : PlayerInteraction.Action
 
 init : ( Model, Cmd Msg )
 init = ( { action = PlayerInteraction.NoAction
+         , is_active = True
          , is_disabled = False
          , click_n = 0
          }
@@ -35,7 +37,8 @@ type Msg = Interaction InteractionMsg
 
 type InteractionMsg = Click PlayerInteraction.Action
 
-type UpdateModelMsg = UpdateAction     PlayerInteraction.Action
+type UpdateModelMsg = UpdateIsActive   Bool
+                    | UpdateAction     PlayerInteraction.Action
                     | UpdateIsDisabled Bool
 
 
@@ -60,6 +63,8 @@ updateModel msg model =
                                     , Cmd.none )
     UpdateIsDisabled is_disabled -> ( { model | is_disabled = is_disabled }
                                     , Cmd.none )
+    UpdateIsActive   is_active   -> ( { model | is_active = is_active }
+                                    , Cmd.none )
 
 
 -- View
@@ -67,11 +72,27 @@ updateModel msg model =
 view : Model -> Html Msg
 view model =
   let
-    attributes = [ Html.Attributes.class "btn btnblock btn-default" ]
-    interact_attributes =
-      case model.action of
-        PlayerInteraction.NoAction -> [ Html.Attributes.disabled True ]
-        _        -> [ Html.Events.onClick ( Interaction ( Click model.action )) ]
-  in
-    Html.a ( attributes ++ interact_attributes )
-            [ Html.text ( PlayerInteraction.actionToString model.action ) ]
+    attributes = [ Html.Attributes.class "btn btn-block btn-default" ]
+    text = PlayerInteraction.actionToString model.action
+    btn =
+      if model.is_active then
+        case model.action of
+          PlayerInteraction.NoAction ->
+            Html.a (attributes ++ [ Html.Attributes.disabled True ] ) [ Html.text text ]
+          PlayerInteraction.Respawn ->
+            Html.a (attributes ++ [ Html.Attributes.disabled True ] ) [ Html.text "You are still alive" ]
+          _                          ->
+            if ( not model.is_disabled ) then
+              Html.a (attributes ++ [ Html.Events.onClick ( Interaction ( Click model.action )) ])
+                     [ Html.text text ]
+            else
+              Html.a (attributes ++ [ Html.Attributes.disabled True ] ) [ Html.text "Recharging" ]
+      else
+        case model.action of
+          PlayerInteraction.Respawn ->
+            Html.a (attributes ++ [ Html.Events.onClick ( Interaction ( Click model.action )) ])
+                   [ Html.text text ]
+          _ ->
+            Html.a ( attributes ++ [ Html.Attributes.disabled True ] ) [ Html.text "You are dead" ]
+    in
+      btn

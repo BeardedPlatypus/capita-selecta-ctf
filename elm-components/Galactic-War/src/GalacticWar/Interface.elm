@@ -41,6 +41,7 @@ type alias Model = { stats : Stats.Model
                    , energy : Energy.Model
                    , server_url : String
                    , poll_data_interval : Float
+                   , is_alive : Bool
                    }
 
 
@@ -69,6 +70,7 @@ init flags =
       , energy = energy_model
       , server_url = flags.server_url
       , poll_data_interval = flags.poll_data_interval
+      , is_alive = True
       }
     , Cmd.batch [ Cmd.map toGenQR qr_cmd
                 , Cmd.map toGenStats stats_cmd
@@ -115,6 +117,8 @@ type ResponseMsg = QRInitSuccess   String
 
 type UpdateModelMsg = Discharge
                     | Recharge
+                    | Activate
+                    | Deactivate
 --                  | PlayerDied
 --                  | PlayerRespawned
 
@@ -229,14 +233,19 @@ updateResponse msg model =
                                |> QRModule.Response ))
       )
     PollSuccess data          ->
-      ( model
-      , Cmd.batch [ Util.toCmd ( toUpdateStats ( Stats.UpdateScore data.score
-                                              |> Stats.UpdateModel ))
-                  , Util.toCmd ( toUpdateStats ( Stats.UpdateKills data.kills
-                                              |> Stats.UpdateModel ))
-                  , Util.toCmd ( toUpdateStats ( Stats.UpdateDeaths data.deaths
-                                              |> Stats.UpdateModel ))
-                  ])
+      let
+        change_state = if model.is_alive && ( not data.is_alive )      then [ Util.toCmd ( UpdateModel Deactivate ) ]
+                       else if ( not model.is_alive ) && data.is_alive then [ Util.toCmd ( UpdateModel Activate ) ]
+                       else [ ]
+      in
+        ( { model | is_alive = data.is_alive }
+        , Cmd.batch ([ Util.toCmd ( toUpdateStats ( Stats.UpdateScore data.score
+                                                 |> Stats.UpdateModel ))
+                     , Util.toCmd ( toUpdateStats ( Stats.UpdateKills data.kills
+                                                 |> Stats.UpdateModel ))
+                     , Util.toCmd ( toUpdateStats ( Stats.UpdateDeaths data.deaths
+                                                 |> Stats.UpdateModel ))
+                    ] ++ change_state ))
     PollFailure error         ->
       ( model
       , Cmd.none
@@ -264,10 +273,26 @@ updateResponse msg model =
 updateModel : UpdateModelMsg -> Model -> ( Model, Cmd Msg )
 updateModel msg model =
   case msg of
-    Discharge -> ( model
-                 , Util.toCmd ( toUpdateEnergy ( Energy.UpdateModel Energy.Discharge ))
-                 )
-    Recharge  -> ( model, Cmd.none )
+    Discharge  ->
+      ( model
+      , Cmd.batch [ Util.toCmd ( toUpdateEnergy ( Energy.UpdateModel Energy.Discharge ))
+                  , Util.toCmd ( toUpdateQR ( QRModule.UpdateModel
+                                            ( QRModule.UpdateIsDisabled True )))
+                  ]
+      )
+    Recharge   ->
+      ( model
+      , Util.toCmd ( toUpdateQR ( QRModule.UpdateModel
+                                ( QRModule.UpdateIsDisabled False )))
+      )
+    Deactivate ->
+      ( model
+      , Util.toCmd ( toUpdateQR ( QRModule.UpdateModel
+                                ( QRModule.UpdateIsActive False ))))
+    Activate   ->
+      ( model
+      , Util.toCmd ( toUpdateQR ( QRModule.UpdateModel
+                                ( QRModule.UpdateIsActive True ))))
 
 --------------------------------------------------------------------------------
 updateChildGenMsg : ChildMsg -> Model -> ( Model, Cmd Msg )

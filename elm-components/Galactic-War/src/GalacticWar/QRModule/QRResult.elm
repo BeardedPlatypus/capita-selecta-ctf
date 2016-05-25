@@ -65,6 +65,8 @@ type Msg = Interaction InteractionMsg
 type InteractionMsg = Click PlayerInteraction.Action
 
 type UpdateModelMsg = UpdateCurrentStatus QRStatus
+                    | UpdateIsActive   Bool
+                    | UpdateIsDisabled Bool
 
 type ChildMsg = ButtonMsg InteractButton.Msg
 
@@ -138,8 +140,14 @@ updateModel msg model =
               }
             , update_cmd )
         _ -> ( { model | current_status = new_status }, Cmd.none )
-
-
+    UpdateIsActive   new_is_active ->
+      ( model
+      , Util.toCmd ( toUpdateButton ( InteractButton.UpdateModel
+                                    ( InteractButton.UpdateIsActive new_is_active ))))
+    UpdateIsDisabled new_is_disabled ->
+      ( model
+      , Util.toCmd ( toUpdateButton ( InteractButton.UpdateModel
+                                    ( InteractButton.UpdateIsDisabled new_is_disabled ))))
 
 --------------------------------------------------------------------------------
 updateChildGenMsg : ChildMsg -> Model -> ( Model, Cmd Msg )

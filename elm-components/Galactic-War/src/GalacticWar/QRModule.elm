@@ -58,7 +58,7 @@ type Msg = Interaction InteractionMsg
          | Request     RequestMsg
          | Response    ResponseMsg
          | ChildGenMsg ChildMsg
---       | UpdateModel UpdateModelMsg
+         | UpdateModel UpdateModelMsg
          | UpdateChild ChildMsg
 
 type InteractionMsg = ButtonInteraction PlayerInteraction.Action
@@ -72,7 +72,8 @@ type ResponseMsg = InitSuccess String
                  | QRFailure   String
                  | StartDecoding
 
--- type UpdateModelMsg =
+type UpdateModelMsg = UpdateIsActive Bool
+                    | UpdateIsDisabled Bool
 
 type ChildMsg = CFMsg CameraFeed.Msg
               | QRMsg QRResult.Msg
@@ -100,7 +101,7 @@ update msg model =
     Request     request_msg      -> updateRequest     request_msg      model
     Response    response_msg     -> updateResponse    response_msg     model
     ChildGenMsg child_msg        -> updateChildGenMsg child_msg        model
---  UpdateModel update_model_msg -> updateModel       update_model_msg model
+    UpdateModel update_model_msg -> updateModel       update_model_msg model
     UpdateChild child_msg        -> updateChild       child_msg        model
 
 
@@ -154,6 +155,19 @@ updateResponse msg model =
                                |> QRResult.UpdateModel )))
     StartDecoding -> ( { model | qr_decoding = True }, Cmd.none )
 
+
+--------------------------------------------------------------------------------
+updateModel : UpdateModelMsg -> Model -> ( Model, Cmd Msg )
+updateModel msg model =
+  case msg of
+    UpdateIsActive   new_is_active ->
+      ( model
+      , Util.toCmd ( toUpdateQR ( QRResult.UpdateModel
+                                ( QRResult.UpdateIsActive new_is_active ))))
+    UpdateIsDisabled new_is_disabled ->
+      ( model
+      , Util.toCmd ( toUpdateQR ( QRResult.UpdateModel
+                                ( QRResult.UpdateIsDisabled new_is_disabled ))))
 
 --------------------------------------------------------------------------------
 updateChildGenMsg : ChildMsg -> Model -> ( Model, Cmd Msg )
