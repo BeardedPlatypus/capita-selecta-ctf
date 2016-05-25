@@ -29,6 +29,7 @@ import GalacticWar.QRModule as QRModule
 import GalacticWar.QRModule.QRResult as QRResult
 
 import GalacticWar.Energy as Energy
+import GalacticWar.PlayerInteraction as PlayerInteraction
 
 import GalacticWar.Util as Util
 
@@ -86,7 +87,7 @@ type Msg = Interaction InteractionMsg
          | ChildGenMsg ChildMsg
          | UpdateChild ChildMsg
 
-type InteractionMsg = QRButtonClick
+type InteractionMsg = QRButtonClick PlayerInteraction.Action
 
 type RequestMsg = QRModuleInit
                 | QRModuleDecode
@@ -101,6 +102,12 @@ type ResponseMsg = QRInitSuccess   String
                  | QRStartDecoding
                  | PollSuccess PollDataSet
                  | PollFailure Http.Error
+                 | RespawnSuccess RespawnSuccessObject
+                 | RespawnFailure Http.Error
+                 | ChallengePlayerSuccess ChallengeSuccessObject
+                 | ChallengePlayerFailure Int Http.Error
+                 | ChallengeNodeSuccess ChallengeSuccessObject
+                 | ChallengeNodeFailure Int Http.Error
 --               | NewClassSucceed ( Maybe Class.ID )
 --               | NewClassFail Class.ID Http.Error
 --               | NewNodeClassSuccess ( Maybe ( Node.ID, Class.ID ))
@@ -156,8 +163,22 @@ update msg model =
 --------------------------------------------------------------------------------
 updateInteraction : InteractionMsg -> Model -> ( Model, Cmd Msg )
 updateInteraction msg model =
-  case msg of
-    QRButtonClick -> ( model, Cmd.none )
+  let
+    discharge_cmd = Util.toCmd ( UpdateModel Discharge )
+  in
+    case msg of
+      QRButtonClick action ->
+        case action of
+          PlayerInteraction.Respawn                   ->
+            ( model, requestRespawn model.server_url )
+          PlayerInteraction.ChallengePlayer player_id ->
+            ( model, Cmd.batch [ requestChallengePlayer model.server_url player_id
+                               , discharge_cmd ])
+          PlayerInteraction.ChallengeNode node_id     ->
+            ( model, Cmd.batch [ requestChallengeNode model.server_url node_id
+                               , discharge_cmd ])
+          _                         ->
+            ( model, Cmd.none )
 
 
 --------------------------------------------------------------------------------
@@ -220,7 +241,24 @@ updateResponse msg model =
       ( model
       , Cmd.none
       )  -- FIXME
-
+    RespawnSuccess data      ->
+      ( model
+      , Cmd.none )
+    RespawnFailure error    ->
+      ( model
+      , requestRespawn model.server_url )
+    ChallengePlayerSuccess result ->
+      ( model
+      , Util.toCmd ( toUpdateEnergy ( Energy.UpdateModel ( Energy.UpdateResetTime result.cool_down ))))
+    ChallengePlayerFailure player_id error ->
+      ( model
+      , requestChallengePlayer model.server_url player_id )
+    ChallengeNodeSuccess result ->
+      ( model
+      , Util.toCmd ( toUpdateEnergy ( Energy.UpdateModel ( Energy.UpdateResetTime result.cool_down ))))
+    ChallengeNodeFailure node_id error ->
+      ( model
+      , requestChallengeNode model.server_url node_id )
 
 --------------------------------------------------------------------------------
 updateModel : UpdateModelMsg -> Model -> ( Model, Cmd Msg )
@@ -242,7 +280,7 @@ updateChildGenMsg msg model =
           case qr_msg of
             QRModule.Interaction interaction_msg ->
               case interaction_msg of
-                QRModule.ButtonInteraction -> [ ] --FIXME
+                QRModule.ButtonInteraction action -> [ Util.toCmd ( Interaction ( QRButtonClick action )) ]
             QRModule.Request     request_msg     ->
               case request_msg of
                 QRModule.RequestInit -> [ Util.toCmd ( Request QRModuleInit ) ]
@@ -356,6 +394,77 @@ decodeStatusNodes =
     mapToTuple entry = ( entry.id, entryToStatus entry )
   in
     Json.list ( Json.map mapToTuple decode_single_entry )
+
+
+--------------------------------------------------------------------------------
+requestRespawn : String -> Cmd Msg
+requestRespawn server_url =
+  let
+    respawn_url = server_url ++ "respawn/"
+    requestSuccess data  = Response ( RespawnSuccess data )
+    requestFailure error = Response ( RespawnFailure error )
+  in
+    Task.perform requestFailure requestSuccess ( Http.get decodeRequestRespawn
+                                                          respawn_url
+                                               )
+
+type alias RespawnSuccessObject = { player_id : Int
+                                  , is_alive  : Bool
+                                  }
+
+decodeRequestRespawn : Json.Decoder RespawnSuccessObject
+decodeRequestRespawn = Json.object2 RespawnSuccessObject ( "player_id" := Json.int  )
+                                                         ( "is_alive"  := Json.bool )
+
+--------------------------------------------------------------------------------
+requestChallengePlayer : String -> Int -> Cmd Msg
+requestChallengePlayer server_url player_id =
+  let
+    challenge_player_url = server_url ++ "challenge_player_" ++ ( toString player_id ) ++ "/"
+    requestSuccess data  = Response ( ChallengePlayerSuccess data )
+    requestFailure error = Response ( ChallengePlayerFailure player_id error )
+  in
+    Task.perform requestFailure requestSuccess ( Http.get decodeChallengeResult
+                                                          challenge_player_url
+                                               )
+
+
+requestChallengeNode : String -> Int -> Cmd Msg
+requestChallengeNode server_url node_id =
+  let
+    challenge_node_url = server_url ++ "challenge_node_" ++ ( toString node_id ) ++ "/"
+    requestSuccess data  = Response ( ChallengeNodeSuccess data )
+    requestFailure error = Response ( ChallengeNodeFailure node_id error )
+  in
+    Task.perform requestFailure requestSuccess ( Http.get decodeChallengeResult
+                                                          challenge_node_url
+                                               )
+
+
+type ChallengeStatus = Win
+                     | Draw
+                     | Lose
+                     | Ignore
+
+toChallengeStatus : String -> ChallengeStatus
+toChallengeStatus status_str =
+  case status_str of
+    "win"  -> Win
+    "draw" -> Draw
+    "lose" -> Lose
+    _      -> Ignore
+
+type alias ChallengeSuccessObject = { cool_down : Int
+                                    , status : ChallengeStatus
+                                    }
+
+decodeChallengeResult : Json.Decoder ChallengeSuccessObject
+decodeChallengeResult =
+  let
+    statusDecoder = Json.map toChallengeStatus Json.string
+  in
+    Json.object2 ChallengeSuccessObject ( "cool_down" := Json.int )
+                                        ( "status" := statusDecoder )
 
 
 --------------------------------------------------------------------------------

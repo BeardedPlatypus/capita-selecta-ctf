@@ -106,6 +106,8 @@ view model =
     description = inner_class_8 [ Html.text "Battery:" ]
     state =       inner_class_4 ( if model.is_charged then
                                     [ Html.text "Charged" ]
+                                  else if not model.is_counting then
+                                    [ Html.text "Discharged" ]
                                   else
                                     [ Html.text (( toString ( model.reset_time -
                                                               model.current_n )) ++

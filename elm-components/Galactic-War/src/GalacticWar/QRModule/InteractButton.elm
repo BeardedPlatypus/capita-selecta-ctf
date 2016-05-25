@@ -16,12 +16,14 @@ import GalacticWar.PlayerInteraction as PlayerInteraction
 --------------------------------------------------------------------------------
 type alias Model = { action : PlayerInteraction.Action
                    , is_disabled : Bool
+                   , click_n : Int
                    }
 
 
 init : ( Model, Cmd Msg )
 init = ( { action = PlayerInteraction.NoAction
          , is_disabled = False
+         , click_n = 0
          }
        , Cmd.none )
 
@@ -48,7 +50,7 @@ update msg model =
 updateInteraction : InteractionMsg -> Model -> ( Model, Cmd Msg )
 updateInteraction msg model =
   case msg of
-    Click _ -> ( model, Cmd.none )
+    Click _ -> ( { model | click_n = model.click_n + 1 }, Cmd.none )
 
 
 updateModel : UpdateModelMsg -> Model -> ( Model, Cmd Msg )
@@ -65,9 +67,11 @@ updateModel msg model =
 view : Model -> Html Msg
 view model =
   let
-    attributes =
+    attributes = [ Html.Attributes.class "btn btnblock btn-default" ]
+    interact_attributes =
       case model.action of
         PlayerInteraction.NoAction -> [ Html.Attributes.disabled True ]
         _        -> [ Html.Events.onClick ( Interaction ( Click model.action )) ]
   in
-    Html.a ( attributes ) [ Html.text ( PlayerInteraction.actionToString model.action )]
+    Html.a ( attributes ++ interact_attributes )
+            [ Html.text ( PlayerInteraction.actionToString model.action ) ]

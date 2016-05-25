@@ -14,6 +14,7 @@ import Time
 import GalacticWar.QRModule.CameraFeed as CameraFeed
 import GalacticWar.QRModule.QRResult as QRResult
 import GalacticWar.Util as Util
+import GalacticWar.PlayerInteraction as PlayerInteraction
 
 
 -- Model
@@ -22,6 +23,7 @@ type alias Model = { camera_feed : CameraFeed.Model
                    , qr_result   : QRResult.Model
                    , qr_decode_interval : Float
                    , qr_decoding : Bool
+                   , click : Int -- FIXME
                    }
 
 
@@ -42,6 +44,7 @@ init flags =
       , qr_result = qr_model
       , qr_decode_interval = flags.qr_interval
       , qr_decoding = False
+      , click = 0
       }
     , Cmd.batch [ Cmd.map toGenCF camera_feed_cmd
                 , Cmd.map toGenQR qr_cmd
@@ -58,7 +61,7 @@ type Msg = Interaction InteractionMsg
 --       | UpdateModel UpdateModelMsg
          | UpdateChild ChildMsg
 
-type InteractionMsg = ButtonInteraction
+type InteractionMsg = ButtonInteraction PlayerInteraction.Action
 
 type RequestMsg = RequestInit
                 | RequestQR
@@ -105,7 +108,7 @@ update msg model =
 updateInteraction : InteractionMsg -> Model -> ( Model, Cmd Msg )
 updateInteraction msg model =
   case msg of
-    ButtonInteraction -> ( model, Cmd.none )
+    ButtonInteraction action -> ( { model | click = model.click + 1 }, Cmd.none )
 
 
 --------------------------------------------------------------------------------
@@ -169,8 +172,14 @@ updateChildGenMsg msg model =
     QRMsg qr_result_msg   ->
       let
         cmd = Util.toCmd ( toUpdateQR qr_result_msg )
+        additional_cmds =
+          case qr_result_msg of
+            QRResult.Interaction interaction_msg ->
+              case interaction_msg of
+                QRResult.Click action -> [ Util.toCmd ( Interaction ( ButtonInteraction action )) ]
+            _                                    -> [ ]
       in
-        ( model, cmd )
+        ( model, Cmd.batch ( [ cmd ] ++ additional_cmds ) )
 
 
 --------------------------------------------------------------------------------
@@ -213,9 +222,11 @@ view model =
 
     camera_feed = row [ viewCameraFeed model.camera_feed ]
     qr_result   = row [ viewQRResult   model.qr_result ]
+    click_test = row [ Html.text ( toString model.click )]
   in
     outer_container [ camera_feed
                     , qr_result
+                    , click_test
                     ]
 
 

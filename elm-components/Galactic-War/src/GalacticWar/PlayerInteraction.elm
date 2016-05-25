@@ -28,7 +28,7 @@ resultToAction result =
       Result.Ok val -> ChallengePlayer val
       _             -> NoAction
   else if String.startsWith "node" result then
-    case ( String.toInt ( String.right 1 result )) of
+    case ( String.toInt ( String.right 2 result )) of
       Result.Ok val -> ChallengeNode val
       _             -> NoAction
   else
