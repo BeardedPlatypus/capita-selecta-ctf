@@ -39,6 +39,7 @@ import GalacticWar.Util as Util
 type alias Model = { stats : Stats.Model
                    , qr : QRModule.Model
                    , energy : Energy.Model
+                   , class_display : ClassDisplay.Model
                    , server_url : String
                    , poll_data_interval : Float
                    , is_alive : Bool
@@ -51,12 +52,18 @@ type alias Flags = { server_url : String
                    , height : Int
                    , qr_interval : Float
                    , reset_n : Int
+                   , class_id : String
                    }
 
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
   let
+    cls_id =
+      case Class.fromDjango flags.class_id of
+        Just cid -> cid
+        Nothing  -> Class.S
+
     ( qr_model, qr_cmd ) = QRModule.init { width   = flags.width
                                          , height  = flags.height
                                          , reset_n = flags.reset_n
@@ -64,10 +71,12 @@ init flags =
                                          }
     ( stats_model, stats_cmd ) = Stats.init
     ( energy_model, energy_cmd ) = Energy.init
+    ( class_display_model, class_display_cmd ) = ClassDisplay.init cls_id
   in
     ( { qr = qr_model
       , stats = stats_model
       , energy = energy_model
+      , class_display = class_display_model
       , server_url = flags.server_url
       , poll_data_interval = flags.poll_data_interval
       , is_alive = True
@@ -75,6 +84,7 @@ init flags =
     , Cmd.batch [ Cmd.map toGenQR qr_cmd
                 , Cmd.map toGenStats stats_cmd
                 , Cmd.map toGenEnergy energy_cmd
+                , Cmd.map toGenCD class_display_cmd
                 ]
     )
 
@@ -90,11 +100,12 @@ type Msg = Interaction InteractionMsg
          | UpdateChild ChildMsg
 
 type InteractionMsg = QRButtonClick PlayerInteraction.Action
+                    | CDButtonClick Class.ID
 
 type RequestMsg = QRModuleInit
                 | QRModuleDecode
                 | PollData
---              | RequestNewClass Class.ID
+                | RequestNewClass Class.ID
 --              | RequestNewNodeClass Class.ID
 
 type ResponseMsg = QRInitSuccess   String
@@ -110,8 +121,8 @@ type ResponseMsg = QRInitSuccess   String
                  | ChallengePlayerFailure Int Http.Error
                  | ChallengeNodeSuccess ChallengeSuccessObject
                  | ChallengeNodeFailure Int Http.Error
---               | NewClassSucceed ( Maybe Class.ID )
---               | NewClassFail Class.ID Http.Error
+                 | NewClassSucceed NewClassSuccessObject
+                 | NewClassFail Class.ID Http.Error
 --               | NewNodeClassSuccess ( Maybe ( Node.ID, Class.ID ))
 --               | NewNodeClassFailure Node.ID Class.ID Http.Error
 
@@ -119,14 +130,12 @@ type UpdateModelMsg = Discharge
                     | Recharge
                     | Activate
                     | Deactivate
---                  | PlayerDied
---                  | PlayerRespawned
 
 type ChildMsg = QRMsg           QRModule.Msg
               | StatsMsg        Stats.Msg
               | EnergyMsg       Energy.Msg
+              | CDMsg           ClassDisplay.Msg
 --            | NodeDisplayMsg  NodeDisplay.Msg
---            | ClassDisplayMsg ClassDisplay.Msg
 
 
 --------------------------------------------------------------------------------
@@ -149,6 +158,13 @@ toUpdateEnergy msg = UpdateChild ( EnergyMsg msg )
 
 toGenEnergy : Energy.Msg -> Msg
 toGenEnergy msg = ChildGenMsg ( EnergyMsg msg )
+
+
+toUpdateCD : ClassDisplay.Msg -> Msg
+toUpdateCD msg = UpdateChild ( CDMsg msg )
+
+toGenCD : ClassDisplay.Msg -> Msg
+toGenCD msg = ChildGenMsg ( CDMsg msg )
 
 --------------------------------------------------------------------------------
 
@@ -183,6 +199,9 @@ updateInteraction msg model =
                                , discharge_cmd ])
           _                         ->
             ( model, Cmd.none )
+      CDButtonClick class_id ->
+        ( model, Cmd.batch [ requestNewClass model.server_url class_id
+                           , discharge_cmd ])
 
 
 --------------------------------------------------------------------------------
@@ -198,7 +217,8 @@ updateRequest msg model =
                        , if model.qr.qr_decoding then ( requestQR { } )
                                                  else Cmd.none )
     PollData        -> ( model, pollData model.server_url )
-
+    RequestNewClass id -> ( model
+                          , requestNewClass model.server_url id )
 
 --------------------------------------------------------------------------------
 updateResponse : ResponseMsg -> Model -> ( Model, Cmd Msg )
@@ -268,6 +288,23 @@ updateResponse msg model =
     ChallengeNodeFailure node_id error ->
       ( model
       , requestChallengeNode model.server_url node_id )
+    NewClassSucceed result ->
+      case result.class_id of
+        Just new_class_id ->
+          ( model
+          , Cmd.batch [ Util.toCmd ( toUpdateEnergy ( Energy.UpdateModel
+                                                    ( Energy.UpdateResetTime result.cool_down )))
+                      , Util.toCmd ( toUpdateCD ( ClassDisplay.UpdateModel
+                                                ( ClassDisplay.UpdateClass new_class_id )
+                                                ))
+                      ]
+          )
+        Nothing ->
+          ( model
+          , Cmd.none )
+    NewClassFail class_id error ->
+      ( model
+      , requestNewClass model.server_url class_id )
 
 --------------------------------------------------------------------------------
 updateModel : UpdateModelMsg -> Model -> ( Model, Cmd Msg )
@@ -330,6 +367,17 @@ updateChildGenMsg msg model =
             _ -> [ ]
       in
         ( model, Cmd.batch ([ child_cmd ] ++ additional_cmds ))
+    CDMsg cd_msg ->
+      let
+        child_cmd = Util.toCmd ( toUpdateCD cd_msg )
+        additional_cmds =
+          case cd_msg of
+            ClassDisplay.Interaction interaction_msg ->
+              case interaction_msg of
+                ClassDisplay.ClickButton id -> [ Util.toCmd ( Interaction ( CDButtonClick id ))]
+            _ -> [ ]
+      in
+        ( model, Cmd.batch ( [ child_cmd ] ++ additional_cmds ))
 
 
 --------------------------------------------------------------------------------
@@ -354,6 +402,12 @@ updateChild msg model =
       in
         ( { model | energy = updated_energy }
         , Cmd.map toGenEnergy energy_cmd )
+    CDMsg cd_msg ->
+      let
+        ( updated_cd, cd_cmd ) = ClassDisplay.update cd_msg model.class_display
+      in
+        ( { model | class_display = updated_cd }
+        , Cmd.map toGenCD cd_cmd )
 
 
 -- Communication
@@ -492,6 +546,32 @@ decodeChallengeResult =
                                         ( "status" := statusDecoder )
 
 
+
+--------------------------------------------------------------------------------
+requestNewClass : String -> Class.ID -> Cmd Msg
+requestNewClass server_url id =
+  let
+    class_change_url = server_url ++ "request_class_" ++ (Class.toDjango id) ++ "/"
+    requestSucceed data = Response ( NewClassSucceed data )
+    requestFail error = Response ( NewClassFail id error )
+  in
+    Task.perform requestFail requestSucceed ( Http.get decodeRequestClass
+                                                       class_change_url)
+
+
+type alias NewClassSuccessObject = { class_id: Maybe Class.ID
+                                   , cool_down : Int
+                                   }
+
+decodeRequestClass : Json.Decoder NewClassSuccessObject
+decodeRequestClass =
+  let
+    classDecoder = Json.map Class.fromDjango Json.string
+  in
+    Json.object2 NewClassSuccessObject ( "class_id" := classDecoder )
+                                       ( "cool_down" := Json.int )
+
+
 --------------------------------------------------------------------------------
 -- In
 type alias ResponseInitSuccessObject = { url : String }
@@ -553,12 +633,15 @@ view model =
     container = Html.div [ Html.Attributes.class "col-lg-12 ctf_component_side" ]
     component_row = Html.div [ Html.Attributes.class "row ctf_component_section" ]
 
-    view_stats  = viewStats  model.stats
-    view_qr     = viewQR     model.qr
-    view_energy = viewEnergy model.energy
+    view_stats  = viewStats        model.stats
+    view_cd     = viewClassDisplay model.class_display
+    view_qr     = viewQR           model.qr
+    view_energy = viewEnergy       model.energy
   in
     container [ component_row [ Html.div [ Html.Attributes.id "stats" ]
                                          [ view_stats ]
+                              , Html.div [ Html.Attributes.id "class_display" ]
+                                         [ view_cd ]
                               ]
               , component_row [ Html.div [ Html.Attributes.id "qr" ]
                                          [ view_qr ]
@@ -580,3 +663,7 @@ viewStats model =
 viewEnergy : Energy.Model -> Html Msg
 viewEnergy model =
   App.map toGenEnergy ( Energy.view model )
+
+viewClassDisplay : ClassDisplay.Model -> Html Msg
+viewClassDisplay model =
+  App.map toGenCD ( ClassDisplay.view model )
